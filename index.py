@@ -40,7 +40,7 @@ def process_line(line):
         return {
             'docno': doc_id,
             'title': preprocess_text(title),
-            'text': preprocess_text(text),
+            'body': preprocess_text(text),
             'keywords': preprocess_text(' '.join(keywords))
         }
     except json.JSONDecodeError:
@@ -64,7 +64,7 @@ def preprocess_corpus_to_df():
 def create_index(df):
     logging.info("Iniciando criação do índice...")
     start = time.time()
-    indexer = pt.IterDictIndexer(INDEX_DIR, overwrite=True, text_attrs=['title', 'text', 'keywords'], fields=True)
+    indexer = pt.IterDictIndexer(INDEX_DIR, overwrite=True, text_attrs=['title', 'body', 'keywords'], fields=True,  meta=['docno', 'title', 'body', 'keywords'])
     indexref = indexer.index(df.to_dict(orient='records'))
     logging.info(f"Index criado em {time.time() - start:.2f} segundos. Caminho: {INDEX_DIR}")
     return indexref
