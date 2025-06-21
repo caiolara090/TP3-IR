@@ -12,7 +12,7 @@ from nltk.stem import PorterStemmer
 import lightgbm as lgb
 from sklearn.model_selection import train_test_split
 
-nltk.download('punkt')
+nltk.download('punkt_tab')
 nltk.download('stopwords')
 
 STOPWORDS = set(stopwords.words('english'))
@@ -53,10 +53,13 @@ def run_ltr_pipeline():
     train_qrels_train = qrels[qrels['qid'].isin(train_queries_train['qid'])]
     train_qrels_val = qrels[qrels['qid'].isin(train_queries_val['qid'])]
         
-    bm25 = pt.terrier.Retriever(index, wmodel="BM25", num_results=HITS_PER_QUERY,
-        controls={"bm25.b" : 0.25, "bm25.k_1": 1.5, "bm25.k_3": 0.5,
-                  'w.0' : 1, 'w.1' : 2, 'w.2' : 1,
-                  }, metadata=["docno"], verbose=True)
+    # bm25 = pt.terrier.Retriever(index, wmodel="BM25", num_results=HITS_PER_QUERY,
+    #     controls={"bm25.b" : 0.25, "bm25.k_1": 1.5, "bm25.k_3": 0.5,
+    #               'w.0' : 1, 'w.1' : 2, 'w.2' : 1,
+    #               }, metadata=["docno"], verbose=True)
+
+    print(index.getCollectionStatistics().getFieldNames())
+    bm25 = pt.terrier.Retriever(index, wmodel='BM25F', controls={'w.0': 1, 'w.1': 2, 'w.2': 2, 'c.0': 0.75, 'c.1': 0.5, 'c.2': 0.25})
 
     tfidf = pt.terrier.Retriever(index, wmodel="TF_IDF", num_results=HITS_PER_QUERY)
     pl2 = pt.terrier.Retriever(index, wmodel="PL2", num_results=HITS_PER_QUERY)
