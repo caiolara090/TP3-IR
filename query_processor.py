@@ -34,7 +34,7 @@ INDEX_DIR = os.path.abspath('indexes/terrier')
 TRAIN_QUERIES_PATH = 'data/train_queries.csv'
 TRAIN_QRELS_PATH = 'data/train_qrels.csv'
 TEST_QUERIES_PATH = 'data/test_queries.csv'
-HITS_PER_QUERY = 150
+HITS_PER_QUERY = 1000
 
 def run_ltr_pipeline():
     index = pt.IndexFactory.of(INDEX_DIR)
