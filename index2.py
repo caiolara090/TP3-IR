@@ -4,6 +4,8 @@ import time
 import pandas as pd
 import pyterrier as pt
 from tqdm import tqdm
+from multiprocessing import Pool, cpu_count
+
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -26,7 +28,7 @@ def process_line(line):
             "docno": doc_id,
             "title": title,
             "text": text,
-            "keywords": " ".join(keywords)
+            "keywords": " ".join(keywords),
         }
     except json.JSONDecodeError:
         return None
@@ -39,7 +41,13 @@ def preprocess_corpus_to_df():
     with open(INPUT_CORPUS_PATH, "r", encoding="utf-8") as f:
         lines = f.readlines()
 
-    results = [process_line(line) for line in tqdm(lines, total=len(lines))]
+    with Pool(processes=cpu_count()) as pool:
+        results = list(
+            tqdm(
+                pool.imap_unordered(process_line, lines, chunksize=100),
+                total=len(lines),
+            )
+        )
 
     docs = [doc for doc in results if doc is not None]
     df = pd.DataFrame(docs)
@@ -52,10 +60,13 @@ def preprocess_corpus_to_df():
 def create_index(df):
     logging.info("Iniciando criação do índice...")
     start = time.time()
-    indexer = pt.IterDictIndexer(INDEX_DIR,
-                                text_attrs=['title', 'keywords', 'text'],
-                                fields=True,
-                                threads=8)
+    indexer = pt.IterDictIndexer(
+        INDEX_DIR,
+        text_attrs=["title", "keywords", "text"],
+        meta={"docno": 10, "title": 50, "keywords": 200, "text": 1000},
+        fields=True,
+        threads=8,
+    )
     indexref = indexer.index(df.to_dict(orient="records"))
     logging.info(
         f"Index criado em {time.time() - start:.2f} segundos. Caminho: {INDEX_DIR}"
@@ -66,7 +77,6 @@ def create_index(df):
 if __name__ == "__main__":
     start_total = time.time()
     df = preprocess_corpus_to_df()
-    print(f"DataFrame criado com {len(df)} documentos.")
     create_index(df)
     logging.info(
         f"Execução total finalizada em {time.time() - start_total:.2f} segundos."
